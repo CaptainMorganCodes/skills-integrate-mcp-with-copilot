@@ -8,6 +8,7 @@ for extracurricular activities at Mergington High School.
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
+import json
 import os
 from pathlib import Path
 
@@ -19,8 +20,9 @@ current_dir = Path(__file__).parent
 app.mount("/static", StaticFiles(directory=os.path.join(Path(__file__).parent,
           "static")), name="static")
 
-# In-memory activity database
-activities = {
+activities_file = current_dir / "activities.json"
+
+DEFAULT_ACTIVITIES = {
     "Chess Club": {
         "description": "Learn strategies and compete in chess tournaments",
         "schedule": "Fridays, 3:30 PM - 5:00 PM",
@@ -76,6 +78,25 @@ activities = {
         "participants": ["charlotte@mergington.edu", "henry@mergington.edu"]
     }
 }
+
+
+def load_activities():
+    if activities_file.exists():
+        try:
+            with activities_file.open("r", encoding="utf-8") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    activities_file.write_text(json.dumps(DEFAULT_ACTIVITIES, indent=2), encoding="utf-8")
+    return DEFAULT_ACTIVITIES.copy()
+
+
+def save_activities():
+    activities_file.write_text(json.dumps(activities, indent=2), encoding="utf-8")
+
+
+activities = load_activities()
 
 
 @app.get("/")
